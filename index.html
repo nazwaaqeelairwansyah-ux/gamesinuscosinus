@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Froggy Sinus & Cosinus Challenge</title>
+    <style>
+        /* =========================================
+           CSS VARIABLES & THEME (Forest River)
+           ========================================= */
+        :root {
+            --primary-green: #4CAF50;
+            --dark-green: #2E7D32;
+            --water-blue: #2196F3;
+            --dark-blue: #1565C0;
+            --accent-yellow: #FFD54F;
+            --text-light: #FFFFFF;
+            --text-dark: #333333;
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            --danger: #FF5252;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--dark-blue), var(--water-blue));
+            color: var(--text-light);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Background Effects */
+        .river-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                radial-gradient(circle at 15% 50%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(255,255,255,0.08) 0%, transparent 50%);
+            z-index: -2;
+            animation: waterMove 20s infinite alternate linear;
+        }
+
+        @keyframes waterMove {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100px 50px; }
+        }
+
+        /* =========================================
+           UI COMPONENTS (Glassmorphism)
+           ========================================= */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: var(--glass-shadow);
+            padding: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(145deg, var(--primary-green), var(--dark-green));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-mode { width: 80%; max-width: 300px; display: block; margin: 15px auto; }
+
+        /* Fullscreen Button */
+        #fs-btn {
+            position: absolute;
+            top: 15px; right: 15px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: white;
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* =========================================
+           SCREENS
+           ========================================= */
+        #menu-screen, #game-screen, #result-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            z-index: 10;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+            z-index: -1 !important;
+        }
+
+        /* Menu */
+        .title-container { text-align: center; margin-bottom: 40px; }
+        .title-container h1 { font-size: 3rem; text-shadow: 2px 4px 10px rgba(0,0,0,0.5); color: var(--accent-yellow); margin-bottom: 10px;}
+        .title-container p { font-size: 1.2rem; opacity: 0.9; }
+
+        /* =========================================
+           GAME LAYOUT (Responsive Grid)
+           ========================================= */
+        #game-grid {
+            width: 100%; height: 100%;
+            display: grid;
+            gap: 8px;
+            padding: 8px;
+        }
+
+        /* Layout Types */
+        .layout-solo { 
+            grid-template-columns: 1fr; 
+            grid-template-rows: 1fr; 
+        }
+        .layout-duel { 
+            grid-template-columns: 1fr 1fr; /* Split Screen: 1 kiri, 1 kanan */
+            grid-template-rows: 1fr; 
+        }
+        .layout-squad { 
+            grid-template-columns: 1fr 1fr 1fr 1fr; /* 4 Kolom Vertikal (Berjejer ke samping) */
+            grid-template-rows: 1fr;    
+        }
+
+        /* Penyesuaian Responsif Layar Tegak (Portrait) pada Smartphone/Tablet */
+        @media (max-width: 768px) and (orientation: portrait) {
+            .layout-duel { 
+                grid-template-columns: 1fr; 
+                grid-template-rows: 1fr 1fr; /* Split atas dan bawah jika portrait */
+            }
+            .layout-squad { 
+                grid-template-columns: 1fr; 
+                grid-template-rows: 1fr 1fr 1fr 1fr; /* 4 baris ditumpuk jika portrait */
+            }
+        }
+
+        /* Player Board */
+        .player-board {
+            position: relative;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 15px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* HUD */
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+            font-weight: bold;
+            font-size: 1rem;
+            z-index: 2;
+        }
+        .hud-stats span { margin-right: 15px; }
+        .hud-player-name { color: var(--accent-yellow); }
+        .lives { color: var(--danger); }
+
+        /* Play Area */
+        .play-area {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 15px;
+        }
+
+        /* Question Box */
+        .question-box {
+            background: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1rem;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 2;
+        }
+
+        /* Pads Container */
+        .pads-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 12px;
+            margin-top: 15px;
+            height: 45%;
+        }
+
+        /* Lily Pad & Answer */
+        .pad-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .pad-wrapper:hover .pad-svg { transform: scale(1.05); filter: brightness(1.2); }
+
+        .pad-svg {
+            width: 100%;
+            height: auto;
+            max-width: 100px;
+            transition: all 0.3s;
+            filter: drop-shadow(0 8px 4px rgba(0,0,0,0.3));
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .pad-wrapper:nth-child(2) .pad-svg { animation-delay: 1s; }
+        .pad-wrapper:nth-child(3) .pad-svg { animation-delay: 2s; }
+        .pad-wrapper:nth-child(4) .pad-svg { animation-delay: 3s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        .answer-text {
+            position: absolute;
+            font-weight: bold;
+            color: #111;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+            font-size: 0.95rem;
+            pointer-events: none;
+            text-align: center;
+            width: 80%;
+        }
+
+        /* Penyesuaian khusus agar elemen muat di Mode Squad (4 Kolom Vertikal) */
+        .layout-squad .pad-svg { max-width: 55px; }
+        .layout-squad .answer-text { font-size: 0.7rem; }
+        .layout-squad .question-box { font-size: 0.75rem; padding: 6px; min-height: 45px; }
+        .layout-squad .frog { font-size: 1.5rem; width: 35px; height: 35px; }
+        .layout-squad .hud { font-size: 0.65rem; padding: 5px; flex-direction: column; align-items: center; text-align: center; }
+        .layout-squad .hud-stats span { margin-right: 0; margin-bottom: 2px; }
+        .layout-squad .pads-container { gap: 4px; margin-top: 5px; }
+        .layout-squad .base-pad { width: 50px; }
+
+        /* Penyesuaian khusus untuk Mode Duel (2 Layar Kolom) */
+        .layout-duel .pad-svg { max-width: 95px; }
+        .layout-duel .answer-text { font-size: 0.9rem; }
+        .layout-duel .question-box { font-size: 0.95rem; padding: 10px; }
+
+        /* Base Pad (Where frog starts) */
+        .base-pad-container {
+            height: 20%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 10px;
+        }
+        
+        .base-pad {
+            width: 80px;
+            filter: drop-shadow(0 8px 4px rgba(0,0,0,0.3));
+        }
+
+        /* Frog */
+        .frog {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            font-size: 2.5rem;
+            line-height: 1;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 5;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
+        }
+
+        /* Animations */
+        @keyframes jump {
+            0% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.2) translateY(-40px); }
+            100% { transform: scale(1) translateY(0); }
+        }
+        .anim-jump { animation: jump 0.4s ease forwards; }
+
+        @keyframes sink {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(50px) scale(0.5); opacity: 0; }
+        }
+        .anim-sink { animation: sink 0.5s ease forwards; }
+
+        .correct-glow { filter: drop-shadow(0 0 15px #00FF00) !important; }
+
+        /* Splashes */
+        .splash-effect {
+            position: absolute;
+            width: 80px; height: 80px;
+            border: 4px solid white;
+            border-radius: 50%;
+            opacity: 0;
+            transform: scale(0);
+            pointer-events: none;
+            z-index: 4;
+            animation: ripple 0.6s ease-out;
+        }
+
+        @keyframes ripple {
+            0% { transform: scale(0); opacity: 1; border-width: 4px; }
+            100% { transform: scale(2); opacity: 0; border-width: 0px; }
+        }
+
+        /* Math formatting */
+        .math { font-family: 'Times New Roman', serif; font-style: italic; font-weight: bold;}
+
+        /* Result Screen */
+        .leaderboard { margin-top: 20px; width: 100%; text-align: left; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; }
+        .leaderboard table { width: 100%; border-collapse: collapse; }
+        .leaderboard th, .leaderboard td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .leaderboard th { color: var(--accent-yellow); }
+
+        /* Mobile specific adjustments */
+        @media (max-width: 600px) {
+            .title-container h1 { font-size: 2rem; }
+            .question-box { font-size: 0.85rem; padding: 8px; min-height: 55px;}
+            .answer-text { font-size: 0.8rem; }
+            .pad-svg { max-width: 70px; }
+            .frog { font-size: 2rem; width: 40px; height: 40px; }
+            .btn { font-size: 1rem; padding: 10px 20px; }
+            .hud { font-size: 0.75rem; padding: 5px 8px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background -->
+    <div class="river-bg"></div>
+
+    <!-- Fullscreen Toggle -->
+    <button id="fs-btn" onclick="toggleFullscreen()">⛶</button>
+
+    <!-- Main Menu -->
+    <div id="menu-screen">
+        <div class="glass-panel" style="width: 90%; max-width: 500px; text-align: center;">
+            <div class="title-container">
+                <h1>🐸 Froggy Math</h1>
+                <p>Aturan Sinus & Cosinus Challenge</p>
+            </div>
+            
+            <button class="btn btn-mode" onclick="startGame('solo')">👤 Solo Mode</button>
+            <button class="btn btn-mode" onclick="startGame('duel')">⚔️ Duel Mode (2P)</button>
+            <button class="btn btn-mode" onclick="startGame('squad')">🤼‍♂️ Squad Mode (4P)</button>
+            
+            <div style="margin-top: 20px; font-size: 0.8rem; opacity: 0.7;">
+                Materi: Matematika Kelas XI SMA<br>
+                Gunakan perangkat dalam mode Landscape untuk Duel/Squad terbaik.
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="hidden">
+        <div id="game-grid">
+            <!-- Player boards injected by JS -->
+        </div>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="result-screen" class="hidden">
+        <div class="glass-panel" style="width: 90%; max-width: 600px; text-align: center;">
+            <h1 style="color: var(--accent-yellow); margin-bottom: 10px;">🏆 GAME OVER</h1>
+            <div id="final-stats" style="margin-bottom: 20px; font-size: 1.1rem; line-height: 1.6;">
+                <!-- Stats injected here -->
+            </div>
+            
+            <div class="leaderboard">
+                <h3>Top Scores (Local)</h3>
+                <table id="lb-table">
+                    <tr><th>Rank</th><th>Mode</th><th>Score</th><th>Accuracy</th></tr>
+                    <!-- Leaderboard data -->
+                </table>
+            </div>
+
+            <button class="btn" onclick="returnToMenu()" style="margin-top: 20px;">Kembali ke Menu</button>
+        </div>
+    </div>
+
+    <script>
+        /** =========================================================================
+         * MATH QUESTION ENGINE (Aturan Sinus & Cosinus)
+         * Membangkitkan soal secara prosedural (HOTS, Mudah, Ambigu)
+         * ========================================================================= */
+        const MathEngine = {
+            // Helper: Mengacak elemen array
+            shuffle: (array) => {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            },
+            // Helper: Random integer
+            randInt: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
+            
+            // Generate Aturan Sinus (Mencari Sisi - Mudah/Sedang)
+            // a/sinA = b/sinB
+            genSinusSide: () => {
+                const angles = [30, 45, 60, 90, 120, 135, 150];
+                const specialSins = {
+                    30: "1/2", 45: "&frac12;&radic;2", 60: "&frac12;&radic;3", 90: "1", 
+                    120: "&frac12;&radic;3", 135: "&frac12;&radic;2", 150: "1/2"
+                };
+                const sinVals = {30: 0.5, 45: 0.707, 60: 0.866, 90: 1, 120: 0.866, 135: 0.707, 150: 0.5};
+
+                let A = angles[MathEngine.randInt(0, 3)];
+                let B = angles[MathEngine.randInt(0, angles.length-1)];
+                while(A + B >= 180 || A === B) {
+                    B = angles[MathEngine.randInt(0, angles.length-1)];
+                }
+                let a = MathEngine.randInt(4, 12) * 2; // Keep it even for nicer numbers
+                
+                // b = (a * sinB) / sinA
+                let b_val = (a * sinVals[B]) / sinVals[A];
+                let b_str = Math.round(b_val * 10)/10 + " cm"; // Fallback
+                
+                // Try to make nice formatting (e.g. 4√2)
+                let ans = b_str;
+                let distractors = [];
+
+                // Hardcode some neat combinations for better UI
+                if (A===30 && B===45) { ans = `${a}&radic;2`; distractors = [`${a}&radic;3`, `${a/2}&radic;2`, `${a*2}`]; }
+                else if (A===45 && B===30) { ans = `${a/2}&radic;2`; distractors = [`${a}&radic;2`, `${a/2}&radic;3`, `${a}`]; }
+                else if (A===30 && B===60) { ans = `${a}&radic;3`; distractors = [`${a}&radic;2`, `${a/2}&radic;3`, `${a*2}`]; }
+                else if (A===60 && B===30) { ans = `${a/3}&radic;3`; distractors = [`${a}&radic;3`, `${a/2}&radic;3`, `${a}`]; }
+                else {
+                    ans = (Math.round(b_val*100)/100);
+                    distractors = [
+                        (Math.round((b_val+2)*100)/100),
+                        (Math.round((b_val-2)*100)/100),
+                        (Math.round((b_val*1.5)*100)/100)
+                    ];
+                }
+
+                return {
+                    q: `Segitiga ABC, panjang <span class="math">a</span> = ${a} cm, &ang;A = ${A}&deg;, dan &ang;B = ${B}&deg;.<br>Panjang sisi <span class="math">b</span> adalah...`,
+                    ans: ans.toString(),
+                    opts: MathEngine.shuffle([ans.toString(), distractors[0].toString(), distractors[1].toString(), distractors[2].toString()])
+                };
+            },
+
+            // Generate Aturan Cosinus (Mencari Sisi - Sedang)
+            // c^2 = a^2 + b^2 - 2ab cosC
+            genCosinusSide: () => {
+                let a = MathEngine.randInt(3, 8);
+                let b = MathEngine.randInt(3, 8);
+                const C_angles = [60, 90, 120];
+                let C = C_angles[MathEngine.randInt(0, 2)];
+                
+                let cosC;
+                if(C===60) cosC = 0.5;
+                else if(C===90) cosC = 0;
+                else if(C===120) cosC = -0.5;
+
+                let c2 = (a*a) + (b*b) - (2*a*b*cosC);
+                let c = Math.sqrt(c2);
+                
+                let ans = Number.isInteger(c) ? c.toString() : `&radic;${c2}`;
+                
+                // Distractors
+                let c2_wrong1 = (a*a) + (b*b) + (2*a*b*Math.abs(cosC)); // sign error
+                let c2_wrong2 = (a*a) + (b*b); // pythagoras assumption
+                let c2_wrong3 = Math.abs((a*a) - (b*b)); 
+
+                let d1 = Number.isInteger(Math.sqrt(c2_wrong1)) ? Math.sqrt(c2_wrong1).toString() : `&radic;${c2_wrong1}`;
+                let d2 = Number.isInteger(Math.sqrt(c2_wrong2)) ? Math.sqrt(c2_wrong2).toString() : `&radic;${c2_wrong2}`;
+                let d3 = Number.isInteger(Math.sqrt(c2_wrong3)) ? Math.sqrt(c2_wrong3).toString() : `&radic;${c2_wrong3}`;
+
+                // Prevent duplicates in options
+                let options = [ans];
+                [d1, d2, d3, c2.toString()].forEach(d => {
+                    if(options.length 
